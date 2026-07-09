@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -233,6 +232,38 @@
     .hero-stats{gap:20px}
   }
   @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+  /* ===== FLOATING CHAT BOT ===== */
+  .bot-fab{
+    position:fixed;bottom:22px;inset-inline-end:22px;z-index:99;
+    width:60px;height:60px;border-radius:50%;border:none;cursor:pointer;
+    background:var(--emerald);color:#fff;font-size:1.6rem;box-shadow:var(--shadow-lg);
+    display:grid;place-items:center;transition:.25s
+  }
+  .bot-fab:hover{transform:scale(1.08)}
+  .bot-fab .badge{position:absolute;top:-2px;inset-inline-start:-2px;width:14px;height:14px;border-radius:50%;background:var(--gold);border:2px solid #fff}
+  .bot-panel{
+    position:fixed;bottom:94px;inset-inline-end:22px;z-index:99;
+    width:min(380px,calc(100vw - 30px));height:min(520px,70vh);
+    background:#fff;border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow-lg);
+    display:none;flex-direction:column;overflow:hidden
+  }
+  .bot-panel.open{display:flex}
+  .bot-head{background:var(--emerald);color:#fff;padding:14px 18px;display:flex;justify-content:space-between;align-items:center}
+  .bot-head b{font-family:var(--disp);font-size:1.05rem}
+  .bot-head small{display:block;font-size:.72rem;opacity:.8;font-weight:400}
+  .bot-head button{background:none;border:none;color:#fff;font-size:1.3rem;cursor:pointer;line-height:1}
+  .bot-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:var(--surface)}
+  .bmsg{max-width:85%;padding:10px 13px;border-radius:14px;font-size:.9rem;line-height:1.6;white-space:pre-wrap}
+  .bmsg.bot{background:#fff;border:1px solid var(--line);align-self:flex-start;border-start-start-radius:4px}
+  .bmsg.user{background:var(--emerald);color:#fff;align-self:flex-end;border-start-end-radius:4px}
+  .bot-quick{display:flex;gap:6px;flex-wrap:wrap;padding:0 14px 8px;background:var(--surface)}
+  .bot-quick button{font-family:var(--disp);font-weight:700;font-size:.75rem;padding:6px 11px;border-radius:20px;border:1px solid var(--line);background:#fff;cursor:pointer;color:var(--emerald-2)}
+  .bot-quick button:hover{background:var(--emerald-soft)}
+  .bot-input{display:flex;gap:8px;padding:12px;border-top:1px solid var(--line);background:#fff}
+  .bot-input input{flex:1;padding:11px 13px;border:1.5px solid var(--line);border-radius:11px;font-family:var(--body);font-size:.9rem}
+  .bot-input input:focus{outline:none;border-color:var(--emerald)}
+  .bot-input button{background:var(--emerald);color:#fff;border:none;border-radius:11px;padding:0 18px;font-family:var(--disp);font-weight:700;cursor:pointer}
 </style>
 </head>
 <body>
@@ -456,6 +487,10 @@
     </div>
     <div class="foot-bottom">
       <span>© <span id="yr"></span> مَسار — Masar Careers</span>
+      <span class="visits" id="visits" style="display:inline-flex;gap:14px;align-items:center">
+        <span>👁 <span data-ar="زوار اليوم:" data-en="Today:">زوار اليوم:</span> <b id="vToday">…</b></span>
+        <span>🌍 <span data-ar="إجمالي الزوار:" data-en="Total:">إجمالي الزوار:</span> <b id="vTotal">…</b></span>
+      </span>
       <span data-ar="صُنع لخدمة الباحثين عن عمل في المملكة 🇸🇦" data-en="Built to serve job seekers in the Kingdom 🇸🇦">صُنع لخدمة الباحثين عن عمل في المملكة 🇸🇦</span>
     </div>
   </div>
@@ -493,6 +528,28 @@ document.querySelectorAll('#navLinks a').forEach(a=>a.addEventListener('click',(
   document.getElementById('navLinks').classList.remove('open');
 }));
 document.getElementById('yr').textContent = new Date().getFullYear();
+
+/* ============================================================
+   VISITOR COUNTER — عدّاد الزوار (اليوم + الإجمالي)
+   Uses free counterapi.dev — no signup, no backend needed.
+   Counts once per browser session (not every refresh).
+============================================================ */
+(async function(){
+  const NS = "masar-careers-github-io";           // namespace فريد لموقعك
+  const today = new Date().toISOString().slice(0,10); // 2026-07-09
+  const hit = !sessionStorage.getItem('masar_counted') ? 'up' : 'get';
+  try{
+    const [t, d] = await Promise.all([
+      fetch(`https://api.counterapi.dev/v1/${NS}/total/${hit}`).then(r=>r.json()),
+      fetch(`https://api.counterapi.dev/v1/${NS}/day-${today}/${hit}`).then(r=>r.json())
+    ]);
+    sessionStorage.setItem('masar_counted','1');
+    document.getElementById('vTotal').textContent = (t.count??0).toLocaleString('ar-SA');
+    document.getElementById('vToday').textContent = (d.count??0).toLocaleString('ar-SA');
+  }catch(e){
+    document.getElementById('visits').style.display='none';
+  }
+})();
 
 /* ============================================================
    UNIFIED SEARCH — بناء روابط بحث حيّة في المنصات الرسمية
@@ -632,37 +689,65 @@ function renderAnalysis(text){
 }
 
 /* --- FALLBACK analyzer (works offline / on GitHub without proxy) --- */
+const SKILL_MAP = [
+  // [regex, skill label, suggested title EN]
+  [/robot|ros2?|روبوت|mujoco|gazebo|nav2|slam|moveit|ur\d+|dobot|denso/i,'Robotics / ROS','Robotics Engineer'],
+  [/machine learning|deep learning|reinforcement|تعلم الآلة|pytorch|tensorflow|lightgbm|ppo|rl\b/i,'Machine Learning','Machine Learning Engineer'],
+  [/computer vision|opencv|yolo|sam2|رؤية حاسوبية|image|segmentation|detection/i,'Computer Vision','Computer Vision Engineer'],
+  [/\bai\b|artificial intelligence|llm|ذكاء اصطناعي|mcp|agent/i,'AI / LLM','AI Engineer'],
+  [/data analy|pandas|numpy|matplotlib|تحليل بيانات|big data|jupyter|colab|sql/i,'Data Analysis','Data Scientist'],
+  [/pmp|pgmp|project manag|إدارة مشاريع|rmp|psp\b/i,'Project Management','Project Manager'],
+  [/supply chain|سلاسل الإمداد|logistics|erp|mrp|sap/i,'Supply Chain','Supply Chain Manager'],
+  [/production|manufactur|تصنيع|إنتاج|lean|six sigma|tqm/i,'Production / Lean','Production Manager'],
+  [/software|برمجة|developer|python|c\+\+|javascript|java\b|matlab|simulink/i,'Programming','Software Engineer'],
+  [/cyber|أمن سيبراني|security|penetration|soc\b/i,'Cybersecurity','Cybersecurity Specialist'],
+  [/account|محاسب|finance|مالية|audit|cpa|socpa/i,'Finance / Accounting','Accountant'],
+  [/market|تسويق|seo|social media|brand/i,'Marketing','Marketing Specialist'],
+  [/civil|مدني|structural|construction|إنشاء/i,'Civil Engineering','Civil Engineer'],
+  [/mechanical|ميكانيك|hvac|cad|solidworks/i,'Mechanical Engineering','Mechanical Engineer'],
+  [/electrical|كهرب|plc|scada|power/i,'Electrical Engineering','Electrical Engineer'],
+  [/nurse|تمريض|ممرض|clinical|طبي|medical|health/i,'Healthcare','Registered Nurse'],
+  [/teacher|معلم|تدريس|education|تعليم|curriculum/i,'Education','Teacher'],
+  [/\bhr\b|موارد بشرية|recruit|talent|توظيف/i,'Human Resources','HR Specialist'],
+  [/sales|مبيعات|business develop|crm/i,'Sales','Sales Executive'],
+  [/design|تصميم|figma|photoshop|ui\/?ux|جرافيك/i,'Design','UI/UX Designer'],
+  [/research|بحث|phd|publication|ieee|دكتوراه/i,'Research & Development','Research Scientist']
+];
 function fallbackAnalyze(cv, years){
-  const y = parseInt(years)|| (cv.match(/\b(\d{1,2})\s*(سنة|سنوات|years?)/)?.[1]|0);
+  const y = parseInt(years)|| parseInt(cv.match(/(\d{1,2})\+?\s*(سنة|سنوات|years?)/i)?.[1]||0);
   let band, sal;
   if(y<=0){band='مبتدئ / حديث تخرج';sal='5,000 – 9,000';}
   else if(y<=3){band='مبتدئ (1-3 سنوات)';sal='8,000 – 14,000';}
   else if(y<=7){band='متوسط (4-7 سنوات)';sal='14,000 – 25,000';}
   else if(y<=12){band='خبير (8-12 سنة)';sal='25,000 – 40,000';}
   else {band='قيادي / مدير (12+)';sal='35,000 – 60,000+';}
-  const kw = [...new Set((cv.match(/[\u0600-\u06FFA-Za-z]{4,}/g)||[]).map(w=>w.toLowerCase()))].slice(0,6);
+  // match real skills against dictionary
+  const found = SKILL_MAP.filter(([re])=>re.test(cv));
+  const skills = found.map(f=>f[1]);
+  const titles = [...new Set(found.map(f=>f[2]))].slice(0,4);
+  if(!titles.length) titles.push('Specialist');
   return `**نقاط القوة**
-- تم استخراج مهارات/كلمات محورية من سيرتك: ${kw.join('، ')||'—'}
-- مستوى الخبرة يوضع ضمن فئة: ${band}
+- مهارات محورية مكتشفة في سيرتك: ${skills.slice(0,8).join('، ')||'أضف مهارات تقنية واضحة'}
+- مستوى الخبرة: ${band}${skills.length>=5?'\n- تنوّع مهاري قوي يفتح لك أكثر من مسار وظيفي.':''}
 
 **نقاط تحتاج تحسين**
 - أضف أرقاماً وإنجازات قابلة للقياس (نسب، مبالغ، نتائج) بدل الوصف العام.
 - طابق كلمات سيرتك مع المسمى المستهدف لرفع ظهورك في أنظمة الفرز (ATS).
 
 **مسميات وظيفية مقترحة**
-- مسميات مرتبطة بمجالك ومستوى ${band}. جرّب البحث بها في المنصات بالأسفل.
+${titles.map(t=>'- '+t).join('\n')}
 
 **الراتب المتوقع (استرشادي)**
-- النطاق التقريبي: ${sal} ريال / شهرياً حسب السوق السعودي والجهة.
+- النطاق التقريبي: ${sal} ريال / شهرياً حسب السوق السعودي والجهة${skills.some(s=>/AI|Machine|Robotics/.test(s))&&y>7?' — تخصصات الذكاء الاصطناعي والروبوتات مع خبرتك قد تتجاوز هذا النطاق في الشركات الكبرى ونيوم وأرامكو.':'.'}
 
 **نصائح للتوظيف السريع**
 - قدّم خلال أول 24 ساعة من نشر الوظيفة، وأكمل ملفك في جدارات 100%.
 - فعّل تنبيهات الوظائف، وصمّم سيرة PDF أقل من 2MB بصيغة ATS.
 
 **كلمات مفتاحية للبحث**
-- استخدم: ${kw.slice(0,4).join('، ')||'مسمّاك الوظيفي'}
+- استخدم: ${titles.slice(0,3).join('، ')}
 
-TITLES: ${kw.slice(0,3).join(' | ')||'specialist'}`;
+TITLES: ${titles.slice(0,3).join(' | ')}`;
 }
 
 /* --- AI call (Anthropic API — works inside Claude preview; via proxy on GitHub) --- */
@@ -759,6 +844,86 @@ document.getElementById('cvFile').addEventListener('change', async (e)=>{
       : 'AI PDF reading needs the proxy enabled. For now, paste the CV text instead.';
   }
 });
+</script>
+<!-- FLOATING CHAT BOT -->
+<button class="bot-fab" id="botFab" aria-label="افتح مستشار مَسار">💬<span class="badge"></span></button>
+<div class="bot-panel" id="botPanel">
+  <div class="bot-head">
+    <div><b>مستشار مَسار</b><small>مساعدك للتوظيف — اسألني أي شيء عن الوظائف</small></div>
+    <button id="botClose" aria-label="إغلاق">✕</button>
+  </div>
+  <div class="bot-msgs" id="botMsgs"></div>
+  <div class="bot-quick" id="botQuick"></div>
+  <div class="bot-input">
+    <input id="botInput" type="text" placeholder="اكتب سؤالك..." />
+    <button id="botSend">➤</button>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   FLOATING BOT — مستشار مَسار
+   AI mode when proxy configured; smart rule-based fallback otherwise.
+============================================================ */
+const botPanel=document.getElementById('botPanel'), botMsgs=document.getElementById('botMsgs');
+let botConvo=[];
+document.getElementById('botFab').addEventListener('click',()=>{
+  botPanel.classList.toggle('open');
+  if(!botMsgs.children.length) botSay('أهلاً بك في مَسار 👋\nأنا مستشارك للتوظيف. اسألني عن:\n• كيفية استخدام الموقع\n• الرواتب المتوقعة لأي مسمى\n• تحسين سيرتك الذاتية\n• أفضل منصة لمجالك\n• نصائح المقابلات والتقديم');
+});
+document.getElementById('botClose').addEventListener('click',()=>botPanel.classList.remove('open'));
+
+function botSay(t){const d=document.createElement('div');d.className='bmsg bot';d.textContent=t;botMsgs.appendChild(d);botMsgs.scrollTop=botMsgs.scrollHeight;}
+function botUser(t){const d=document.createElement('div');d.className='bmsg user';d.textContent=t;botMsgs.appendChild(d);botMsgs.scrollTop=botMsgs.scrollHeight;}
+function botTyping(on){
+  let e=document.getElementById('botTyping');
+  if(on&&!e){e=document.createElement('div');e.id='botTyping';e.className='bmsg bot';e.innerHTML='<span class="typing"><i></i><i></i><i></i></span>';botMsgs.appendChild(e);botMsgs.scrollTop=botMsgs.scrollHeight;}
+  if(!on&&e)e.remove();
+}
+
+/* quick suggestion chips */
+const QUICK=['كم راتب مهندس؟','كيف أحسّن سيرتي؟','أفضل منصة للحكومي؟','نصائح للمقابلة','كيف يعمل الموقع؟'];
+document.getElementById('botQuick').innerHTML=QUICK.map(q=>`<button onclick="botAsk('${q}')">${q}</button>`).join('');
+
+/* rule-based fallback brain — يجيب على الأسئلة الشائعة بدون إنترنت */
+const BOT_RULES=[
+  [/راتب|رواتب|salary|كم يتقاضى|أجر/i, s=>{
+    const f=SKILL_MAP.find(([re])=>re.test(s));
+    const t=f?f[2]:'التخصص';
+    return `الرواتب في السوق السعودي (استرشادية شهرياً):\n• حديث تخرج: 5–9 آلاف ريال\n• خبرة 1-3 سنوات: 8–14 ألف\n• خبرة 4-7: 14–25 ألف\n• خبرة 8-12: 25–40 ألف\n• قيادي: 35–60+ ألف\n\n${f?`تخصص ${t} تحديداً من التخصصات المطلوبة وقد يزيد 15-30% في الشركات الكبرى ومشاريع الرؤية (نيوم، أرامكو، STC).`:'حدّد لي التخصص وسنوات الخبرة وأعطيك تقديراً أدق، أو حلّل سيرتك من قسم "تحليل السيرة".'}`}],
+  [/سيرة|سيرتي|cv|resume|ats/i, ()=>'لتحسين سيرتك:\n1. صيغة ATS بسيطة بدون جداول وصور، PDF أقل من 2MB\n2. إنجازات بأرقام: "خفضت التكلفة 20%" بدل "مسؤول عن التكاليف"\n3. طابق كلمات إعلان الوظيفة في سيرتك حرفياً\n4. صفحة إلى صفحتين كحد أقصى\n\nالصق سيرتك في قسم "تحليل السيرة" فوق وأعطيك تحليلاً كاملاً مع الوظائف المطابقة 👆'],
+  [/حكومي|جدارات|قوى|أبشر|government/i, ()=>'للوظائف الحكومية:\n• جدارات (jadarat.sa) — المنصة الموحدة الرسمية لكل وظائف القطاع العام، سجّل عبر النفاذ الوطني وأكمل ملفك 100%\n• أبشر توظيف — الوظائف العسكرية والأمنية\n• فهيم — وظائف التعليم\n\nنصيحة: وثّق مؤهلك في جدارات أولاً، وفعّل التنبيهات — الإعلانات الحكومية تغلق بسرعة.'],
+  [/مقابلة|مقابلات|interview/i, ()=>'نصائح المقابلة:\n1. ادرس الجهة: رؤيتها، مشاريعها، أخبارها الأخيرة\n2. جهّز إجابات STAR (موقف-مهمة-إجراء-نتيجة) لأهم 5 أسئلة\n3. جهّز سؤالين ذكيين تسألهم أنت\n4. للمقابلات الإنجليزية: تدرّب على تعريف نفسك في 90 ثانية\n5. أرسل رسالة شكر بعد المقابلة خلال 24 ساعة'],
+  [/كيف يعمل|الموقع|استخدام|طريقة/i, ()=>'مَسار بسيط جداً:\n1️⃣ ابحث عن مسمى ومدينة من الصفحة الرئيسية — نفتح لك النتائج في 7 منصات دفعة واحدة\n2️⃣ حلّل سيرتك من قسم "تحليل السيرة" — يعطيك المسميات والراتب المتوقع ووظائف مطابقة\n3️⃣ تصفّح "الجهات" لروابط كل منصات التوظيف الرسمية\n\nكل شيء مجاني 100% 🎁'],
+  [/linkedin|لينكد/i, ()=>'LinkedIn الأقوى للوظائف المكتبية والقيادية:\n• أكمل ملفك 100% مع صورة احترافية\n• فعّل "Open to Work" (يمكن إخفاؤه عن جهة عملك الحالية)\n• انشر محتوى في مجالك أسبوعياً — الظهور يجذب الموظِّفين\n• تواصل مع موظفي الجهات المستهدفة قبل التقديم'],
+  [/شكرا|شكراً|thanks|جزاك/i, ()=>'العفو! 🌟 بالتوفيق في رحلتك الوظيفية. أنا هنا متى ما احتجتني.'],
+  [/مرحبا|هلا|السلام|hello|hi/i, ()=>'هلا وغلا! 👋 كيف أقدر أساعدك في بحثك عن الوظيفة اليوم؟']
+];
+function botFallback(q){
+  for(const [re,fn] of BOT_RULES){ if(re.test(q)) return fn(q); }
+  const f=SKILL_MAP.find(([re])=>re.test(q));
+  if(f) return `مجال ${f[1]} مطلوب في السوق السعودي 👍\nالمسمى الشائع: ${f[2]}\n\nجرّب البحث عنه من الصفحة الرئيسية لتفتح الوظائف الحقيقية في كل المنصات، أو حلّل سيرتك لأعطيك تقييماً كاملاً بالراتب المتوقع.`;
+  return 'سؤال جيد! أنا متخصص في التوظيف والسير الذاتية والرواتب في السوق السعودي.\n\nجرّب تسألني عن: راتب تخصصك، تحسين السيرة، أفضل منصة لمجالك، أو نصائح المقابلات.\n\n(لتفعيل الإجابات الذكية الكاملة المربوطة بالإنترنت، فعّل وسيط الذكاء الاصطناعي في إعدادات الموقع)';
+}
+
+async function botAsk(q){
+  q=(q||document.getElementById('botInput').value).trim(); if(!q)return;
+  document.getElementById('botInput').value='';
+  botUser(q); botTyping(true);
+  botConvo.push({role:'user',content:q});
+  try{
+    const out=await callAI(botConvo.slice(-8)); if(!out)throw 0;
+    botConvo.push({role:'assistant',content:out});
+    botTyping(false); botSay(out.replace(/TITLES:.*$/im,'').trim());
+  }catch(e){
+    botTyping(false);
+    const a=botFallback(q);
+    botConvo.push({role:'assistant',content:a});
+    botSay(a);
+  }
+}
+document.getElementById('botSend').addEventListener('click',()=>botAsk());
+document.getElementById('botInput').addEventListener('keydown',e=>{if(e.key==='Enter')botAsk();});
 </script>
 </body>
 </html>
