@@ -725,8 +725,23 @@ function renderAnalysis(text){
     .replace(/\n{2,}/g,'<br>');
   const city = document.getElementById('cvCity').value;
   html += matchedJobsHTML(titles, city);
+  html += `<div style="margin-top:14px"><button class="btn btn-gold" style="width:100%" onclick="depositCV()">📥 أودع هذه السيرة في بنك مَسار — لنرشّحك للجهات</button></div>`;
   analysisOut.innerHTML = html;
   chatBox.classList.add('show');
+}
+function depositCV(){
+  const cv = document.getElementById('cvText').value;
+  const yrs = document.getElementById('cvYears').value;
+  const city = document.getElementById('cvCity').value;
+  const form = document.getElementById('talentForm');
+  form.cv_text.value = cv;
+  if(yrs) form.experience.value = yrs;
+  if(city) form.city.value = city;
+  // استنتاج التخصص من التحليل
+  const f = SKILL_MAP.find(([re])=>re.test(cv));
+  if(f && !form.field.value) form.field.value = f[1];
+  document.getElementById('talent').scrollIntoView({behavior:'smooth'});
+  setTimeout(()=>form.name.focus(), 600);
 }
 
 /* --- FALLBACK analyzer (works offline / on GitHub without proxy) --- */
@@ -888,21 +903,43 @@ document.getElementById('cvFile').addEventListener('change', async (e)=>{
    TALENT POOL FORM — يصلك بالإيميل عبر Formspree
    أنشئ نموذجاً مجانياً في formspree.io وضع الرابط هنا:
 ============================================================ */
-const TALENT_ENDPOINT = "https://formspree.io/f/YOUR_FORM_ID"; // ← غيّر YOUR_FORM_ID
+const TALENT_ENDPOINT = "https://formspree.io/f/YOUR_FORM_ID"; // ← بعد إنشاء نموذج Formspree ضع رابطه هنا
+const TALENT_EMAIL = "info.masar.2@gmail.com";
 document.getElementById('talentForm').addEventListener('submit', async (e)=>{
   e.preventDefault();
   const f = e.target, msg = document.getElementById('talentMsg');
+  const data = Object.fromEntries(new FormData(f).entries());
   msg.style.color = 'var(--muted)'; msg.textContent = 'جارٍ الإرسال...';
-  try{
-    const r = await fetch(TALENT_ENDPOINT,{method:'POST',headers:{'Accept':'application/json'},body:new FormData(f)});
-    if(!r.ok) throw 0;
-    f.reset();
-    msg.style.color = 'var(--emerald)';
-    msg.textContent = '✅ تم استلام سيرتك بنجاح! سنتواصل معك عند توفر شواغر مطابقة.';
-  }catch(err){
-    msg.style.color = '#b3261e';
-    msg.textContent = 'تعذّر الإرسال حالياً — جرّب مرة أخرى بعد قليل.';
+
+  // محاولة الإرسال المباشر عبر Formspree إن كان مفعّلاً
+  if(!TALENT_ENDPOINT.includes('YOUR_FORM_ID')){
+    try{
+      const r = await fetch(TALENT_ENDPOINT,{method:'POST',headers:{'Accept':'application/json'},body:new FormData(f)});
+      if(r.ok){
+        f.reset();
+        msg.style.color='var(--emerald)';
+        msg.textContent='✅ تم استلام سيرتك بنجاح! سنتواصل معك عند توفر شواغر مطابقة.';
+        return;
+      }
+    }catch(err){/* fallthrough to mailto */}
   }
+
+  // الخطة البديلة المضمونة: فتح الإيميل برسالة جاهزة
+  const subject = encodeURIComponent(`سيرة ذاتية جديدة — ${data.name||''} (${data.field||''})`);
+  const body = encodeURIComponent(
+`الاسم: ${data.name||''}
+الجوال: ${data.phone||''}
+الإيميل: ${data.email||''}
+المدينة: ${data.city||''}
+التخصص: ${data.field||''}
+سنوات الخبرة: ${data.experience||''}
+رابط السيرة: ${data.cv_link||''}
+
+—— نص السيرة ——
+${data.cv_text||''}`);
+  window.location.href = `mailto:${TALENT_EMAIL}?subject=${subject}&body=${body}`;
+  msg.style.color='var(--emerald)';
+  msg.textContent='📧 فتحنا لك رسالة جاهزة ببياناتك — اضغط "إرسال" في تطبيق البريد لإيداع سيرتك.';
 });
 </script>
 <!-- FLOATING CHAT BOT -->
