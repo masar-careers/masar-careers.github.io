@@ -943,17 +943,58 @@ document.getElementById('cvFile').addEventListener('change', async (e)=>{
 const SHEET_DB_URL   = ""; // ← رابط Google Apps Script (اختياري)
 const TALENT_ENDPOINT = "https://formspree.io/f/YOUR_FORM_ID"; // ← رابط Formspree
 
+/* اختيار ملف السيرة — يُقرأ محلياً ويُحفظ في Drive عبر Apps Script عند الإرسال */
+let TALENT_FILE = null;
+document.getElementById('talentFile').addEventListener('change', async (e)=>{
+  const file = e.target.files[0]; if(!file) return;
+  const st = document.getElementById('upStatus');
+  if(file.size > 5*1024*1024){ st.textContent='⚠️ الحد 5MB — صغّر الملف أو استخدم رابط Drive.'; e.target.value=''; return; }
+  st.textContent = '⏳ جارٍ تجهيز الملف...';
+  try{
+    const b64 = await new Promise((res,rej)=>{
+      const r = new FileReader();
+      r.onload = ()=>res(r.result.split(',')[1]);
+      r.onerror = rej; r.readAsDataURL(file);
+    });
+    TALENT_FILE = {name:file.name, type:file.type||'application/octet-stream', b64:b64};
+    st.textContent = '✅ ' + file.name + ' جاهز — سيُحفظ مع سيرتك عند الإرسال';
+    document.getElementById('cvUpLabel').textContent = '✅ ' + file.name;
+    if(file.type==='application/pdf' && window.pdfjsLib){
+      try{
+        const txt = await extractPdfText(file);
+        const ta = document.querySelector('#talentForm textarea[name=cv_text]');
+        if(txt && !ta.value.trim()) ta.value = txt;
+      }catch(_){}
+    }
+  }catch(err){
+    TALENT_FILE = null;
+    st.textContent = 'تعذّرت قراءة الملف — جرّب ملفاً آخر أو ضع رابط Drive.';
+  }
+});
+
+/* زر نسخ البيانات */
+document.getElementById('copyCVBtn').addEventListener('click', ()=>{
+  const f = document.getElementById('talentForm');
+  const d = Object.fromEntries(new FormData(f).entries());
+  const txt = `الاسم: ${d.name||''}\nالجوال: ${d.phone||''}\nالإيميل: ${d.email||''}\nالمدينة: ${d.city||''}\nالتخصص: ${d.field||''}\nالخبرة: ${d.experience||''} سنة\nرابط السيرة: ${d.cv_link||''}\n\n${d.cv_text||''}`;
+  navigator.clipboard.writeText(txt).then(()=>{
+    const m = document.getElementById('talentMsg');
+    m.style.color='var(--emerald)'; m.textContent='📋 نُسخت البيانات.';
+  });
+});
+
 document.getElementById('talentForm').addEventListener('submit', async (e)=>{
   e.preventDefault();
   const f = e.target, msg = document.getElementById('talentMsg');
   const data = Object.fromEntries(new FormData(f).entries());
-  if(!data.cv_text?.trim() && !data.cv_link?.trim()){
+  if(!data.cv_text?.trim() && !data.cv_link?.trim() && !TALENT_FILE){
     msg.style.color='#b3261e';
     msg.textContent='⚠️ ارفع ملف سيرتك أو ضع رابطها أو الصق نصها — خيار واحد يكفي.';
     return;
   }
   msg.style.color='var(--muted)'; msg.textContent='جارٍ حفظ سيرتك...';
   data.submitted_at = new Date().toLocaleString('ar-SA');
+  if(TALENT_FILE){ data.file_name=TALENT_FILE.name; data.file_type=TALENT_FILE.type; data.file_b64=TALENT_FILE.b64; }
   let saved = false;
 
   // 1) الحفظ في قاعدة بيانات Google Sheet (إن كانت مفعّلة)
@@ -974,8 +1015,9 @@ document.getElementById('talentForm').addEventListener('submit', async (e)=>{
   }
 
   if(saved){
-    f.reset();
+    f.reset(); TALENT_FILE = null;
     document.getElementById('cvUpLabel').textContent = '📎 اختر ملف سيرتك';
+    document.getElementById('upStatus').textContent = '';
     msg.style.color='var(--emerald)';
     msg.textContent='✅ تم حفظ سيرتك في بنك مَسار بنجاح! سنرشّحك عند توفر شواغر مطابقة.';
   }else{
