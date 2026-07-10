@@ -450,11 +450,23 @@
         <div class="field"><label data-ar="سنوات الخبرة" data-en="Experience (yrs)">سنوات الخبرة</label>
           <input name="experience" type="number" min="0" placeholder="5" /></div>
       </div>
-      <div class="field"><label data-ar="رابط سيرتك (Google Drive / LinkedIn) — اختياري" data-en="CV link (Drive/LinkedIn) — optional">رابط سيرتك (Google Drive / LinkedIn) — اختياري</label>
+      <div class="field"><label data-ar="ملف السيرة (PDF/Word) — اختياري" data-en="CV file (PDF/Word) — optional">ملف السيرة (PDF/Word) — اختياري</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <label class="btn btn-ghost file-btn" style="flex:1;position:relative;overflow:hidden">
+            <span id="cvUpLabel" data-ar="📎 اختر ملف سيرتك" data-en="📎 Choose CV file">📎 اختر ملف سيرتك</span>
+            <input type="file" id="talentFile" accept=".pdf,.doc,.docx" style="position:absolute;inset:0;opacity:0;cursor:pointer" />
+          </label>
+        </div>
+        <p id="upStatus" style="font-size:.78rem;color:var(--muted);margin-top:5px"></p>
+      </div>
+      <div class="field"><label data-ar="أو رابط سيرتك (Google Drive / LinkedIn)" data-en="Or CV link (Drive/LinkedIn)">أو رابط سيرتك (Google Drive / LinkedIn)</label>
         <input name="cv_link" placeholder="https://..." /></div>
       <div class="field"><label data-ar="أو الصق نص سيرتك هنا *" data-en="Or paste your CV text *">أو الصق نص سيرتك هنا *</label>
         <textarea name="cv_text" rows="6" required placeholder="الخبرات، الشهادات، المهارات..." style="background:var(--surface)"></textarea></div>
-      <button type="submit" class="btn btn-primary" style="width:100%" data-ar="أودع سيرتي في بنك مَسار" data-en="Submit my CV">أودع سيرتي في بنك مَسار</button>
+      <div style="display:flex;gap:8px">
+        <button type="submit" class="btn btn-primary" style="flex:1" data-ar="أودع سيرتي في بنك مَسار" data-en="Submit my CV">أودع سيرتي في بنك مَسار</button>
+        <button type="button" class="btn btn-ghost" id="copyCVBtn" title="نسخ البيانات" data-ar="📋 نسخ" data-en="📋 Copy">📋 نسخ</button>
+      </div>
       <p id="talentMsg" style="margin-top:10px;font-size:.88rem;text-align:center"></p>
       <p style="margin-top:8px;font-size:.75rem;color:var(--muted);text-align:center" data-ar="بإرسالك توافق على حفظ بياناتك لغرض الترشيح للوظائف فقط." data-en="By submitting you consent to storing your data for job nomination purposes only.">بإرسالك توافق على حفظ بياناتك لغرض الترشيح للوظائف فقط.</p>
     </form>
@@ -595,18 +607,31 @@ document.getElementById('yr').textContent = new Date().getFullYear();
 /* ============================================================
    UNIFIED SEARCH — بناء روابط بحث حيّة في المنصات الرسمية
 ============================================================ */
+function normalizeTitle(title){
+  const t = (title||'').trim();
+  if(!t) return t;
+  // إذا كان المسمى عربياً، ترجمه لأقرب مسمى إنجليزي معتمد حتى تعمل كل المنصات
+  if(/[\u0600-\u06FF]/.test(t) && typeof SKILL_MAP !== 'undefined'){
+    const f = SKILL_MAP.find(([re])=>re.test(t));
+    if(f) return f[2];
+  }
+  return t;
+}
 function buildPortalLinks(title, city){
-  const t = encodeURIComponent((title||'').trim());
+  const nt = normalizeTitle(title);
+  const t = encodeURIComponent(nt);
   const c = encodeURIComponent((city||'').trim());
-  const tSlug = (title||'').trim().replace(/\s+/g,'-').toLowerCase();
+  const g = q => 'https://www.google.com/search?q=' + encodeURIComponent(q); // بحث موقعي مضمون يوصل لإعلانات حقيقية
   return [
-    {name:'LinkedIn', url:`https://www.linkedin.com/jobs/search/?keywords=${t}&location=${c||'Saudi%20Arabia'}`},
-    {name:'جدارات', url:'https://jadarat.sa/ExploreJobs'},
-    {name:'Bayt', url:`https://www.bayt.com/en/saudi-arabia/jobs/${tSlug}-jobs/`},
-    {name:'Indeed', url:`https://sa.indeed.com/jobs?q=${t}&l=${c}`},
-    {name:'GulfTalent', url:`https://www.gulftalent.com/jobs/search?q=${t}`},
-    {name:'Naukrigulf', url:`https://www.naukrigulf.com/${tSlug}-jobs`},
-    {name:'Google Jobs', url:`https://www.google.com/search?q=${t}+jobs+${c||'Saudi+Arabia'}&ibp=htl;jobs`}
+    {name:'LinkedIn',   url:`https://www.linkedin.com/jobs/search/?keywords=${t}&location=${c||'Saudi%20Arabia'}`},
+    {name:'Indeed',     url:`https://sa.indeed.com/jobs?q=${t}&l=${c}`},
+    {name:'Google Jobs',url:`https://www.google.com/search?q=${t}+jobs+${c||'Saudi+Arabia'}&ibp=htl;jobs`},
+    {name:'جدارات',     url:'https://jadarat.sa/ExploreJobs'},
+    {name:'Bayt',       url:g(`site:bayt.com ${nt} jobs Saudi Arabia ${city||''}`)},
+    {name:'GulfTalent', url:g(`site:gulftalent.com ${nt} Saudi Arabia`)},
+    {name:'Naukrigulf', url:g(`site:naukrigulf.com ${nt} Saudi Arabia`)},
+    {name:'Tanqeeb',    url:g(`site:tanqeeb.com ${nt} السعودية`)},
+    {name:'Glassdoor',  url:g(`site:glassdoor.com ${nt} Saudi Arabia jobs`)}
   ];
 }
 function renderPortalOut(title, city){
@@ -905,6 +930,37 @@ document.getElementById('cvFile').addEventListener('change', async (e)=>{
 ============================================================ */
 const TALENT_ENDPOINT = "https://formspree.io/f/YOUR_FORM_ID"; // ← بعد إنشاء نموذج Formspree ضع رابطه هنا
 const TALENT_EMAIL = "info.masar.2@gmail.com";
+/* رفع ملف السيرة — يرفع لخدمة gofile المجانية ويضع الرابط تلقائياً */
+document.getElementById('talentFile').addEventListener('change', async (e)=>{
+  const file = e.target.files[0]; if(!file) return;
+  const st = document.getElementById('upStatus');
+  if(file.size > 8*1024*1024){ st.textContent='⚠️ الملف أكبر من 8MB — صغّره أو استخدم رابط Drive.'; return; }
+  st.textContent = '⏳ جارٍ رفع الملف...';
+  try{
+    const fd = new FormData(); fd.append('file', file);
+    const r = await fetch('https://upload.gofile.io/uploadfile',{method:'POST',body:fd});
+    const d = await r.json();
+    if(d.status==='ok' && d.data?.downloadPage){
+      document.querySelector('#talentForm input[name=cv_link]').value = d.data.downloadPage;
+      st.innerHTML = '✅ تم رفع: ' + file.name + ' — أُدرج الرابط تلقائياً';
+      document.getElementById('cvUpLabel').textContent = '✅ ' + file.name;
+    } else throw 0;
+  }catch(err){
+    st.textContent = 'تعذّر الرفع المباشر — ارفع الملف على Google Drive والصق الرابط في الخانة بالأسفل.';
+  }
+});
+
+/* زر نسخ البيانات — خيار إضافي مضمون */
+document.getElementById('copyCVBtn').addEventListener('click', ()=>{
+  const f = document.getElementById('talentForm');
+  const d = Object.fromEntries(new FormData(f).entries());
+  const txt = `الاسم: ${d.name||''}\nالجوال: ${d.phone||''}\nالإيميل: ${d.email||''}\nالمدينة: ${d.city||''}\nالتخصص: ${d.field||''}\nالخبرة: ${d.experience||''} سنة\nرابط السيرة: ${d.cv_link||''}\n\n${d.cv_text||''}`;
+  navigator.clipboard.writeText(txt).then(()=>{
+    const m = document.getElementById('talentMsg');
+    m.style.color='var(--emerald)'; m.textContent='📋 نُسخت البيانات — الصقها في أي إيميل أو واتساب وأرسلها.';
+  });
+});
+
 document.getElementById('talentForm').addEventListener('submit', async (e)=>{
   e.preventDefault();
   const f = e.target, msg = document.getElementById('talentMsg');
