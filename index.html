@@ -932,46 +932,16 @@ document.getElementById('cvFile').addEventListener('change', async (e)=>{
    TALENT POOL FORM — يصلك بالإيميل عبر Formspree
    أنشئ نموذجاً مجانياً في formspree.io وضع الرابط هنا:
 ============================================================ */
-const TALENT_ENDPOINT = "https://formspree.io/f/YOUR_FORM_ID"; // ← بعد إنشاء نموذج Formspree ضع رابطه هنا
-const TALENT_EMAIL = "info.masar.2@gmail.com";
-/* رفع ملف السيرة — يرفع لخدمة gofile المجانية ويضع الرابط تلقائياً */
-document.getElementById('talentFile').addEventListener('change', async (e)=>{
-  const file = e.target.files[0]; if(!file) return;
-  const st = document.getElementById('upStatus');
-  if(file.size > 8*1024*1024){ st.textContent='⚠️ الملف أكبر من 8MB — صغّره أو استخدم رابط Drive.'; return; }
-  st.textContent = '⏳ جارٍ رفع الملف...';
-  try{
-    const fd = new FormData(); fd.append('file', file);
-    const r = await fetch('https://upload.gofile.io/uploadfile',{method:'POST',body:fd});
-    const d = await r.json();
-    if(d.status==='ok' && d.data?.downloadPage){
-      document.querySelector('#talentForm input[name=cv_link]').value = d.data.downloadPage;
-      st.innerHTML = '✅ تم رفع: ' + file.name + ' — أُدرج الرابط تلقائياً';
-      document.getElementById('cvUpLabel').textContent = '✅ ' + file.name;
-      // استخراج النص تلقائياً أيضاً لتسهيل الفرز
-      if(file.type==='application/pdf'){
-        try{
-          const txt = await extractPdfText(file);
-          const ta = document.querySelector('#talentForm textarea[name=cv_text]');
-          if(txt && !ta.value.trim()) ta.value = txt;
-        }catch(_){}
-      }
-    } else throw 0;
-  }catch(err){
-    st.textContent = 'تعذّر الرفع المباشر — ارفع الملف على Google Drive والصق الرابط في الخانة بالأسفل.';
-  }
-});
-
-/* زر نسخ البيانات — خيار إضافي مضمون */
-document.getElementById('copyCVBtn').addEventListener('click', ()=>{
-  const f = document.getElementById('talentForm');
-  const d = Object.fromEntries(new FormData(f).entries());
-  const txt = `الاسم: ${d.name||''}\nالجوال: ${d.phone||''}\nالإيميل: ${d.email||''}\nالمدينة: ${d.city||''}\nالتخصص: ${d.field||''}\nالخبرة: ${d.experience||''} سنة\nرابط السيرة: ${d.cv_link||''}\n\n${d.cv_text||''}`;
-  navigator.clipboard.writeText(txt).then(()=>{
-    const m = document.getElementById('talentMsg');
-    m.style.color='var(--emerald)'; m.textContent='📋 نُسخت البيانات — الصقها في أي إيميل أو واتساب وأرسلها.';
-  });
-});
+/* ============================================================
+   حفظ السير الذاتية — قاعدة بيانات + إشعار بريدي من خادم الخدمة
+   الخيار 1 (قاعدة بيانات Google Sheet خاصة بك):
+     ضع رابط Apps Script في SHEET_DB_URL (الخطوات في ملف google-apps-script.js)
+   الخيار 2 (Formspree — لوحة تخزين + إيميل يصلك من خوادمهم):
+     ضع رابط النموذج في TALENT_ENDPOINT
+   يمكن تفعيل الاثنين معاً. لا يُفتح أي بريد لدى الزائر إطلاقاً.
+============================================================ */
+const SHEET_DB_URL   = ""; // ← رابط Google Apps Script (اختياري)
+const TALENT_ENDPOINT = "https://formspree.io/f/YOUR_FORM_ID"; // ← رابط Formspree
 
 document.getElementById('talentForm').addEventListener('submit', async (e)=>{
   e.preventDefault();
@@ -982,37 +952,36 @@ document.getElementById('talentForm').addEventListener('submit', async (e)=>{
     msg.textContent='⚠️ ارفع ملف سيرتك أو ضع رابطها أو الصق نصها — خيار واحد يكفي.';
     return;
   }
-  msg.style.color = 'var(--muted)'; msg.textContent = 'جارٍ الإرسال...';
+  msg.style.color='var(--muted)'; msg.textContent='جارٍ حفظ سيرتك...';
+  data.submitted_at = new Date().toLocaleString('ar-SA');
+  let saved = false;
 
-  // محاولة الإرسال المباشر عبر Formspree إن كان مفعّلاً
+  // 1) الحفظ في قاعدة بيانات Google Sheet (إن كانت مفعّلة)
+  if(SHEET_DB_URL){
+    try{
+      await fetch(SHEET_DB_URL,{method:'POST',mode:'no-cors',
+        headers:{'Content-Type':'text/plain'},body:JSON.stringify(data)});
+      saved = true;
+    }catch(_){}
+  }
+  // 2) الحفظ في Formspree (لوحة تخزين + إشعار بريدي من خوادمهم)
   if(!TALENT_ENDPOINT.includes('YOUR_FORM_ID')){
     try{
-      const r = await fetch(TALENT_ENDPOINT,{method:'POST',headers:{'Accept':'application/json'},body:new FormData(f)});
-      if(r.ok){
-        f.reset();
-        msg.style.color='var(--emerald)';
-        msg.textContent='✅ تم استلام سيرتك بنجاح! سنتواصل معك عند توفر شواغر مطابقة.';
-        return;
-      }
-    }catch(err){/* fallthrough to mailto */}
+      const r = await fetch(TALENT_ENDPOINT,{method:'POST',
+        headers:{'Accept':'application/json'},body:new FormData(f)});
+      if(r.ok) saved = true;
+    }catch(_){}
   }
 
-  // الخطة البديلة المضمونة: فتح الإيميل برسالة جاهزة
-  const subject = encodeURIComponent(`سيرة ذاتية جديدة — ${data.name||''} (${data.field||''})`);
-  const body = encodeURIComponent(
-`الاسم: ${data.name||''}
-الجوال: ${data.phone||''}
-الإيميل: ${data.email||''}
-المدينة: ${data.city||''}
-التخصص: ${data.field||''}
-سنوات الخبرة: ${data.experience||''}
-رابط السيرة: ${data.cv_link||''}
-
-—— نص السيرة ——
-${data.cv_text||''}`);
-  window.location.href = `mailto:${TALENT_EMAIL}?subject=${subject}&body=${body}`;
-  msg.style.color='var(--emerald)';
-  msg.textContent='📧 فتحنا لك رسالة جاهزة ببياناتك — اضغط "إرسال" في تطبيق البريد لإيداع سيرتك.';
+  if(saved){
+    f.reset();
+    document.getElementById('cvUpLabel').textContent = '📎 اختر ملف سيرتك';
+    msg.style.color='var(--emerald)';
+    msg.textContent='✅ تم حفظ سيرتك في بنك مَسار بنجاح! سنرشّحك عند توفر شواغر مطابقة.';
+  }else{
+    msg.style.color='#b3261e';
+    msg.textContent='الخدمة قيد الصيانة مؤقتاً — جرّب لاحقاً أو تواصل معنا.';
+  }
 });
 </script>
 <!-- FLOATING CHAT BOT -->
