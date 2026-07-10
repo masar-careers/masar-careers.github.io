@@ -278,6 +278,7 @@
       <a href="#directory" data-ar="الجهات" data-en="Portals">الجهات</a>
       <a href="#how" data-ar="كيف يعمل" data-en="How it works">كيف يعمل</a>
       <a href="#pricing" data-ar="الباقات" data-en="Plans">الباقات</a>
+      <a href="#talent" data-ar="سجّل سيرتك" data-en="Submit CV">سجّل سيرتك</a>
     </nav>
     <div class="nav-right">
       <button class="lang" id="langBtn">EN</button>
@@ -421,6 +422,45 @@
   </div>
 </section>
 
+
+<!-- TALENT POOL — بنك السير الذاتية -->
+<section id="talent">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow" data-ar="بنك المواهب" data-en="Talent pool">بنك المواهب</span>
+      <h2 data-ar="سجّل سيرتك — ونوصلك بجهات التوظيف" data-en="Submit your CV — we connect you to employers">سجّل سيرتك — ونوصلك بجهات التوظيف</h2>
+      <p data-ar="أودع سيرتك في قاعدة مَسار مجاناً. عند توفر شواغر مطابقة لدى الجهات المتعاونة معنا، نرشّحك مباشرة." data-en="Deposit your CV in the Masar pool for free. When partner employers have matching vacancies, we nominate you directly.">أودع سيرتك في قاعدة مَسار مجاناً. عند توفر شواغر مطابقة لدى الجهات المتعاونة معنا، نرشّحك مباشرة.</p>
+    </div>
+    <form id="talentForm" class="search-card" style="max-width:640px">
+      <div class="row-2" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="field"><label data-ar="الاسم الكامل *" data-en="Full name *">الاسم الكامل *</label>
+          <input name="name" required placeholder="عبدالله محمد" /></div>
+        <div class="field"><label data-ar="رقم الجوال *" data-en="Mobile *">رقم الجوال *</label>
+          <input name="phone" required placeholder="05xxxxxxxx" /></div>
+      </div>
+      <div class="row-2" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="field"><label data-ar="البريد الإلكتروني *" data-en="Email *">البريد الإلكتروني *</label>
+          <input name="email" type="email" required placeholder="you@email.com" /></div>
+        <div class="field"><label data-ar="المدينة" data-en="City">المدينة</label>
+          <input name="city" placeholder="الرياض" /></div>
+      </div>
+      <div class="row-2" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="field"><label data-ar="التخصص / المجال *" data-en="Field *">التخصص / المجال *</label>
+          <input name="field" required placeholder="هندسة، محاسبة، تسويق..." /></div>
+        <div class="field"><label data-ar="سنوات الخبرة" data-en="Experience (yrs)">سنوات الخبرة</label>
+          <input name="experience" type="number" min="0" placeholder="5" /></div>
+      </div>
+      <div class="field"><label data-ar="رابط سيرتك (Google Drive / LinkedIn) — اختياري" data-en="CV link (Drive/LinkedIn) — optional">رابط سيرتك (Google Drive / LinkedIn) — اختياري</label>
+        <input name="cv_link" placeholder="https://..." /></div>
+      <div class="field"><label data-ar="أو الصق نص سيرتك هنا *" data-en="Or paste your CV text *">أو الصق نص سيرتك هنا *</label>
+        <textarea name="cv_text" rows="6" required placeholder="الخبرات، الشهادات، المهارات..." style="background:var(--surface)"></textarea></div>
+      <button type="submit" class="btn btn-primary" style="width:100%" data-ar="أودع سيرتي في بنك مَسار" data-en="Submit my CV">أودع سيرتي في بنك مَسار</button>
+      <p id="talentMsg" style="margin-top:10px;font-size:.88rem;text-align:center"></p>
+      <p style="margin-top:8px;font-size:.75rem;color:var(--muted);text-align:center" data-ar="بإرسالك توافق على حفظ بياناتك لغرض الترشيح للوظائف فقط." data-en="By submitting you consent to storing your data for job nomination purposes only.">بإرسالك توافق على حفظ بياناتك لغرض الترشيح للوظائف فقط.</p>
+    </form>
+  </div>
+</section>
+
 <!-- PRICING -->
 <section id="pricing" class="sec-alt">
   <div class="wrap">
@@ -472,7 +512,8 @@
           <li><a href="#jobs" data-ar="الوظائف" data-en="Jobs">الوظائف</a></li>
           <li><a href="#analyzer" data-ar="تحليل السيرة" data-en="CV Analyzer">تحليل السيرة</a></li>
           <li><a href="#directory" data-ar="الجهات" data-en="Portals">الجهات</a></li>
-          <li><a href="#pricing" data-ar="الباقات" data-en="Plans">الباقات</a></li>
+          <li><a href="#pricing" data-ar="الباقات" data-en="Plans">الباقات</a>
+      <a href="#talent" data-ar="سجّل سيرتك" data-en="Submit CV">سجّل سيرتك</a></li>
         </ul>
       </div>
       <div>
@@ -788,9 +829,7 @@ async function runAnalysis(){
   }catch(e){
     const fb = fallbackAnalyze(cv, years);
     renderAnalysis(fb);
-    document.getElementById('aiModeNote').textContent = lang==='ar'
-      ? 'الوضع الاحتياطي يعمل بدون إنترنت. لتفعيل الذكاء الاصطناعي الكامل على موقعك، اضبط رابط الوسيط (Cloudflare Worker) في إعدادات الكود.'
-      : 'Fallback mode (offline). To enable full AI on your site, set the Cloudflare Worker URL in the config.';
+    document.getElementById('aiModeNote').textContent = '';
   }
 }
 analyzeBtn.addEventListener('click', runAnalysis);
@@ -809,7 +848,7 @@ async function sendChat(){
     convo.push({role:"assistant",content:out});
     analysisOut.innerHTML = prev + `<div style="margin-top:10px"><b style="color:var(--gold)">المستشار:</b><br>${out.replace(/\n/g,'<br>')}</div>`;
   }catch(e){
-    analysisOut.innerHTML = prev + `<div style="margin-top:10px;color:rgba(255,255,255,.6)">تعذّر الاتصال بالمستشار الذكي الآن. فعّل الوسيط لتشغيل المحادثة على موقعك.</div>`;
+    analysisOut.innerHTML = prev + `<div style="margin-top:10px;color:rgba(255,255,255,.6)">جرّب البوت العائم أسفل الصفحة 💬 — يجيب على أسئلتك فوراً.</div>`;
   }
   analysisOut.scrollTop = analysisOut.scrollHeight;
 }
@@ -840,8 +879,29 @@ document.getElementById('cvFile').addEventListener('change', async (e)=>{
     note.textContent = file.name;
   }catch(err){
     note.textContent = lang==='ar'
-      ? 'قراءة PDF بالذكاء الاصطناعي تحتاج تفعيل الوسيط. مؤقتاً: انسخ نص السيرة والصقه في الصندوق.'
-      : 'AI PDF reading needs the proxy enabled. For now, paste the CV text instead.';
+      ? 'انسخ نص السيرة والصقه في الصندوق وسيتم تحليله فوراً.'
+      : 'Paste the CV text in the box for instant analysis.';
+  }
+});
+
+/* ============================================================
+   TALENT POOL FORM — يصلك بالإيميل عبر Formspree
+   أنشئ نموذجاً مجانياً في formspree.io وضع الرابط هنا:
+============================================================ */
+const TALENT_ENDPOINT = "https://formspree.io/f/YOUR_FORM_ID"; // ← غيّر YOUR_FORM_ID
+document.getElementById('talentForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const f = e.target, msg = document.getElementById('talentMsg');
+  msg.style.color = 'var(--muted)'; msg.textContent = 'جارٍ الإرسال...';
+  try{
+    const r = await fetch(TALENT_ENDPOINT,{method:'POST',headers:{'Accept':'application/json'},body:new FormData(f)});
+    if(!r.ok) throw 0;
+    f.reset();
+    msg.style.color = 'var(--emerald)';
+    msg.textContent = '✅ تم استلام سيرتك بنجاح! سنتواصل معك عند توفر شواغر مطابقة.';
+  }catch(err){
+    msg.style.color = '#b3261e';
+    msg.textContent = 'تعذّر الإرسال حالياً — جرّب مرة أخرى بعد قليل.';
   }
 });
 </script>
@@ -896,6 +956,16 @@ const BOT_RULES=[
   [/مقابلة|مقابلات|interview/i, ()=>'نصائح المقابلة:\n1. ادرس الجهة: رؤيتها، مشاريعها، أخبارها الأخيرة\n2. جهّز إجابات STAR (موقف-مهمة-إجراء-نتيجة) لأهم 5 أسئلة\n3. جهّز سؤالين ذكيين تسألهم أنت\n4. للمقابلات الإنجليزية: تدرّب على تعريف نفسك في 90 ثانية\n5. أرسل رسالة شكر بعد المقابلة خلال 24 ساعة'],
   [/كيف يعمل|الموقع|استخدام|طريقة/i, ()=>'مَسار بسيط جداً:\n1️⃣ ابحث عن مسمى ومدينة من الصفحة الرئيسية — نفتح لك النتائج في 7 منصات دفعة واحدة\n2️⃣ حلّل سيرتك من قسم "تحليل السيرة" — يعطيك المسميات والراتب المتوقع ووظائف مطابقة\n3️⃣ تصفّح "الجهات" لروابط كل منصات التوظيف الرسمية\n\nكل شيء مجاني 100% 🎁'],
   [/linkedin|لينكد/i, ()=>'LinkedIn الأقوى للوظائف المكتبية والقيادية:\n• أكمل ملفك 100% مع صورة احترافية\n• فعّل "Open to Work" (يمكن إخفاؤه عن جهة عملك الحالية)\n• انشر محتوى في مجالك أسبوعياً — الظهور يجذب الموظِّفين\n• تواصل مع موظفي الجهات المستهدفة قبل التقديم'],
+  [/تفاوض|زيادة راتب|negotiat|عرض وظيفي|offer/i, ()=>'التفاوض على الراتب 💰:\n1. لا تذكر رقماً أولاً — اسأل "ما النطاق المعتمد للوظيفة؟"\n2. إذا اضطررت، أعطِ نطاقاً أعلى بـ10-15% من هدفك\n3. تفاوض على الحزمة كاملة: بدل سكن، مواصلات، تأمين عائلي، عمل مرن\n4. اطلب مهلة 48 ساعة لدراسة العرض — طبيعي ومقبول\n5. أي اتفاق يكون مكتوباً في العرض الرسمي قبل الاستقالة من عملك الحالي'],
+  [/حديث تخرج|خريج|بدون خبرة|fresh|أول وظيفة/i, ()=>'لحديثي التخرج 🎓:\n1. سجّل في جدارات وبرنامج تمهير (تدريب بمكافأة شهرية)\n2. أضف مشاريع التخرج والتدريب التعاوني كخبرة فعلية في سيرتك\n3. الشهادات المجانية (Google، Coursera، سدايا) تميّزك\n4. قدّم على برامج الخريجين في أرامكو وسابك وSTC والبنوك — تفتح سنوياً\n5. الخبرة أول سنتين أهم من الراتب — شركة قوية براتب أقل استثمار ذكي'],
+  [/سعودة|توطين|نطاقات|saudization/i, ()=>'السعودة تصب في صالحك 🇸🇦:\n• المهن المقصورة على السعوديين تتوسع سنوياً (موارد بشرية، مبيعات، محاسبة...)\n• الشركات تحتاج رفع نسب التوطين — قدّم بثقة\n• برامج دعم التوظيف من هدف تدفع جزءاً من راتبك للشركة — ميزة تفاوضية لك\n• اذكر في تقديمك أنك مؤهل لدعم هدف'],
+  [/عن بعد|remote|من المنزل|عمل حر|فريلانس|freelanc/i, ()=>'العمل عن بعد والحر 🏠:\n• المنصة الرسمية للعمل عن بعد: teleworks.sa\n• LinkedIn وBayt: استخدم فلتر Remote\n• الأكثر توفراً: البرمجة، التصميم، التسويق الرقمي، خدمة العملاء\n• للعمل الحر: منصة بحر (bahr.sa) بعقود موثقة + وثيقة العمل الحر من freelance.sa'],
+  [/خطاب|cover letter|تغطية/i, ()=>'خطاب التقديم الناجح ✍️:\n1. لا تكرر سيرتك — اربط خبرتك باحتياج الوظيفة تحديداً\n2. الفقرة الأولى: لماذا هذه الجهة بالذات (اذكر مشروعاً لها)\n3. الثانية: أقوى إنجازين لك بأرقام\n4. الأخيرة: طلب واضح للمقابلة\n5. نصف صفحة كحد أقصى'],
+  [/تغيير مسار|تخصص ثاني|career change|مجال جديد/i, ()=>'تغيير المسار المهني 🔄:\n1. ابحث عن "الجسر" — المهارات المشتركة بين مجالك الحالي والجديد\n2. خذ شهادة معتمدة في المجال الجديد قبل التقديم\n3. اقبل نزولاً مؤقتاً في المسمى وليس بالضرورة الراتب\n4. استهدف شركات تعرف قطاعك القديم — خبرتك تصير ميزة\n5. حدّث LinkedIn للمجال الجديد قبل التقديم بشهر'],
+  [/شهادة خبرة|إثبات خبرة|توثيق خبر/i, ()=>'شهادات الخبرة 📄:\n• حق نظامي لك من أي جهة عملت فيها (نظام العمل السعودي)\n• وثّق خبراتك في قوى/التأمينات — الجهات الحكومية تعتمدها\n• الخبرات الخارجية: صادقها من الملحقية الثقافية\n• وثّق أولاً بأول — التوثيق المتأخر أصعب'],
+  [/نيوم|neom|أرامكو|aramco|سابك|رؤية 2030|مشاريع كبرى|قديه|البحر الأحمر/i, ()=>'مشاريع الرؤية الكبرى 🏗️:\n• نيوم، القدية، البحر الأحمر، روشن — وظائفها على مواقعها الرسمية وLinkedIn\n• رواتبها أعلى من السوق غالباً مع بدلات مواقع\n• أرامكو: careers.aramco.com — برامج للخريجين وذوي الخبرة\n• فعّل جرس التنبيه 🔔 على صفحاتهم في LinkedIn — التقديم المبكر حاسم'],
+  [/استقالة|أستقيل|إشعار|نهاية خدمة/i, ()=>'قبل الاستقالة ⚠️:\n1. لا تستقل قبل عرض رسمي مكتوب وموقّع\n2. راجع مهلة الإشعار في عقدك (عادة 30-60 يوماً)\n3. مكافأة نهاية الخدمة تتأثر بالاستقالة — راجع نظام العمل\n4. اطلب شهادة خبرة قبل آخر يوم دوام\n5. اخرج بعلاقات طيبة — السوق صغير والسمعة رأس مال'],
+  [/تدريب|دورة|شهادات|كورس|certificat/i, ()=>'أفضل الشهادات للسوق السعودي 📚:\n• إدارة مشاريع: PMP (الأقوى طلباً)\n• تقنية: شهادات Google وAWS وMicrosoft\n• ذكاء اصطناعي: برامج سدايا المجانية\n• محاسبة: SOCPA / CMA\n• موارد بشرية: CIPD\nمنصات مجانية: دروب (هدف)، فرصة، Coursera بالدعم السعودي'],
   [/شكرا|شكراً|thanks|جزاك/i, ()=>'العفو! 🌟 بالتوفيق في رحلتك الوظيفية. أنا هنا متى ما احتجتني.'],
   [/مرحبا|هلا|السلام|hello|hi/i, ()=>'هلا وغلا! 👋 كيف أقدر أساعدك في بحثك عن الوظيفة اليوم؟']
 ];
@@ -903,7 +973,7 @@ function botFallback(q){
   for(const [re,fn] of BOT_RULES){ if(re.test(q)) return fn(q); }
   const f=SKILL_MAP.find(([re])=>re.test(q));
   if(f) return `مجال ${f[1]} مطلوب في السوق السعودي 👍\nالمسمى الشائع: ${f[2]}\n\nجرّب البحث عنه من الصفحة الرئيسية لتفتح الوظائف الحقيقية في كل المنصات، أو حلّل سيرتك لأعطيك تقييماً كاملاً بالراتب المتوقع.`;
-  return 'سؤال جيد! أنا متخصص في التوظيف والسير الذاتية والرواتب في السوق السعودي.\n\nجرّب تسألني عن: راتب تخصصك، تحسين السيرة، أفضل منصة لمجالك، أو نصائح المقابلات.\n\n(لتفعيل الإجابات الذكية الكاملة المربوطة بالإنترنت، فعّل وسيط الذكاء الاصطناعي في إعدادات الموقع)';
+  return 'أنا مستشارك المجاني للتوظيف في السوق السعودي 🎯\n\nاسألني عن:\n• راتب أي تخصص ومستوى خبرة\n• تحسين السيرة الذاتية وخطاب التقديم\n• أفضل منصة لمجالك (حكومي/خاص)\n• نصائح المقابلات والتفاوض على الراتب\n• السعودة والعمل عن بعد وحديثي التخرج\n\nأو أعد صياغة سؤالك بكلمات أوضح وسأساعدك.';
 }
 
 async function botAsk(q){
